@@ -126,15 +126,27 @@ class GlancesStats(object):
     def load_plugins(self, args=None):
         """Load all plugins in the 'plugins' folder."""
         start_duration = Counter()
-        for item in os.listdir(plugins_path):
-            if item.startswith(self.header) and item.endswith(".py") and item != (self.header + "plugin.py"):
+        is_nuitka = "__compiled__" in globals()
+        if not is_nuitka:
+            for item in os.listdir(plugins_path):
+                if item.startswith(self.header) and item.endswith(".py") and item != (self.header + "plugin.py"):
+                    # Load the plugin
+                    start_duration.reset()
+                    self._load_plugin(os.path.basename(item), args=args, config=self.config)
+                    logger.debug("Plugin {} started in {} seconds".format(item, start_duration.get()))
+        else:
+            # pwsh "['{0}']" -f ((Get-ChildItem -Directory .\glances\plugins\ | Where-Object { $_.Name -notmatch '^_' -and $_.Name -ne 'plugin' } | Select-Object -ExpandProperty Name) -join "','")
+            plugins=['containers','sensors','glances_alert.py','glances_amps.py','glances_cloud.py','glances_connections.py','glances_containers.py','glances_core.py','glances_cpu.py','glances_diskio.py','glances_folders.py','glances_fs.py','glances_gpu.py','glances_help.py','glances_ip.py','glances_irq.py','glances_load.py','glances_mem.py','glances_memswap.py','glances_network.py','glances_now.py','glances_percpu.py','glances_plugin.py','glances_ports.py','glances_processcount.py','glances_processlist.py','glances_psutilversion.py','glances_quicklook.py','glances_raid.py','glances_sensors.py','glances_smart.py','glances_system.py','glances_uptime.py','glances_wifi.py']
+            for item in plugins:
                 # Load the plugin
                 start_duration.reset()
+
                 self._load_plugin(os.path.basename(item), args=args, config=self.config)
-                logger.debug("Plugin {} started in {} seconds".format(item, start_duration.get()))
+                logger.debug(f"[nuitka]Plugin {item} started in {start_duration.get()} seconds")
 
         # Log plugins list
         logger.debug("Active plugins list: {}".format(self.getPluginsList()))
+        print(f"Active plugins list: {self.getPluginsList()}")
 
     def load_exports(self, args=None):
         """Load all export modules in the 'exports' folder."""
