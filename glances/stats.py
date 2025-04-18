@@ -144,7 +144,7 @@ class GlancesStats(object):
                 # Load the plugin
                 start_duration.reset()
 
-                self._load_plugin(os.path.basename(item), args=args, config=self.config,pkg_prefix="plugins.")
+                self._load_plugin(os.path.basename(item), args=args, config=self.config,pkg_prefix="plugins.glances_")
                 logger.debug(f"[nuitka]Plugin {item} started in {start_duration.get()} seconds")
 
         # Log plugins list
