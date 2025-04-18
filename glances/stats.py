@@ -92,7 +92,7 @@ class GlancesStats(object):
         # Restoring system path
         sys.path = sys_path
 
-    def _load_plugin(self, plugin_script, args=None, config=None):
+    def _load_plugin(self, plugin_script, args=None, config=None,pkg_prefix=None):
         """Load the plugin (script), init it and add to the _plugin dict."""
         # The key is the plugin name
         # for example, the file glances_xxx.py
@@ -102,7 +102,7 @@ class GlancesStats(object):
         # Load the plugin class
         try:
             # Import the plugin
-            plugin = __import__(plugin_script[:-3])
+            plugin = __import__(pkg_prefix + plugin_script[:-3])
             # Init and add the plugin to the dictionary
             self._plugins[name] = plugin.Plugin(args=args, config=config)
         except Exception as e:
@@ -141,7 +141,7 @@ class GlancesStats(object):
                 # Load the plugin
                 start_duration.reset()
 
-                self._load_plugin(os.path.basename(item), args=args, config=self.config)
+                self._load_plugin(os.path.basename(item), args=args, config=self.config,pkg_prefix="plugins.")
                 logger.debug(f"[nuitka]Plugin {item} started in {start_duration.get()} seconds")
 
         # Log plugins list

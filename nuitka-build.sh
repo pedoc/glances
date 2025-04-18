@@ -2,7 +2,7 @@ nuitka \
   --onefile \
   --standalone \
   --output-dir=dist \
-  --output-filename=glances.exe \
+  --output-filename=glances \
   --assume-yes-for-downloads \
   --include-module=psutil \
   --show-modules \
