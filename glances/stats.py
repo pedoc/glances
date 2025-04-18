@@ -98,11 +98,14 @@ class GlancesStats(object):
         # for example, the file glances_xxx.py
         # generate self._plugins_list["xxx"] = ...
         name = plugin_script[len(self.header) : -3].lower()
-
+        pkg_name=name
+        if pkg_prefix:
+            pkg_name=pkg_prefix+name
         # Load the plugin class
         try:
             # Import the plugin
-            plugin = __import__(pkg_prefix + plugin_script[:-3])
+            logger.debug(f"Plugin {plugin_script} real name: {pkg_name}")
+            plugin = __import__(pkg_name)
             # Init and add the plugin to the dictionary
             self._plugins[name] = plugin.Plugin(args=args, config=config)
         except Exception as e:
