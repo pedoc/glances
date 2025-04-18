@@ -64,3 +64,9 @@ bower_components/
 # Virtual env
 /venv/
 
+/venv*/
+
+# Test
+.coverage
+/.venv/
+/run.build/
