@@ -77,6 +77,11 @@ work_path = os.path.realpath(os.path.dirname(__file__))
 amps_path = os.path.realpath(os.path.join(work_path, 'amps'))
 plugins_path = os.path.realpath(os.path.join(work_path, 'plugins'))
 exports_path = os.path.realpath(os.path.join(work_path, 'exports'))
+
+if hasattr(sys, '_MEIPASS'):
+    plugins_path =  os.path.realpath(os.path.join(sys._MEIPASS, 'plugins'))
+    exports_path =  os.path.realpath(os.path.join(sys._MEIPASS, 'exports'))
+
 sys_path = sys.path[:]
 sys.path.insert(1, exports_path)
 sys.path.insert(1, plugins_path)
