@@ -92,26 +92,25 @@ class GlancesStats(object):
         # Restoring system path
         sys.path = sys_path
 
-    def _load_plugin(self, plugin_script, args=None, config=None,pkg_prefix=None):
+    def _load_plugin(self, plugin_script, args=None, config=None,pkg_name=None):
         """Load the plugin (script), init it and add to the _plugin dict."""
         # The key is the plugin name
         # for example, the file glances_xxx.py
         # generate self._plugins_list["xxx"] = ...
         name = plugin_script[len(self.header) : -3].lower()
-        pkg_name=name
-        if pkg_prefix:
-            pkg_name=pkg_prefix+name
+
         # Load the plugin class
         try:
             # Import the plugin
-            logger.debug(f"Plugin {plugin_script} real name: {pkg_name}")
-            plugin = __import__(pkg_name)
+            plugin = __import__(pkg_name or plugin_script[:-3])
+            print(f'{pkg_name or plugin_script[:-3]} imported,plugin={plugin.__dict__}');
+
             # Init and add the plugin to the dictionary
             self._plugins[name] = plugin.Plugin(args=args, config=config)
         except Exception as e:
             # If a plugin can not be loaded, display a critical message
             # on the console but do not crash
-            logger.critical("Error while initializing the {} plugin ({})".format(name, e))
+            logger.critical("Error while initializing the {} plugin ({}) pkg_name={}".format(name, e,pkg_name))
             logger.error(traceback.format_exc())
             # An error occurred, disable the plugin
             if args is not None:
@@ -139,13 +138,14 @@ class GlancesStats(object):
                     logger.debug("Plugin {} started in {} seconds".format(item, start_duration.get()))
         else:
             # pwsh "['{0}']" -f ((Get-ChildItem -Directory .\glances\plugins\ | Where-Object { $_.Name -notmatch '^_' -and $_.Name -ne 'plugin' } | Select-Object -ExpandProperty Name) -join "','")
-            plugins=['containers','sensors','glances_alert.py','glances_amps.py','glances_cloud.py','glances_connections.py','glances_containers.py','glances_core.py','glances_cpu.py','glances_diskio.py','glances_folders.py','glances_fs.py','glances_gpu.py','glances_help.py','glances_ip.py','glances_irq.py','glances_load.py','glances_mem.py','glances_memswap.py','glances_network.py','glances_now.py','glances_percpu.py','glances_plugin.py','glances_ports.py','glances_processcount.py','glances_processlist.py','glances_psutilversion.py','glances_quicklook.py','glances_raid.py','glances_sensors.py','glances_smart.py','glances_system.py','glances_uptime.py','glances_wifi.py']
+            plugins=['glances_alert.py','glances_amps.py','glances_cloud.py','glances_connections.py','glances_containers.py','glances_core.py','glances_cpu.py','glances_diskio.py','glances_folders.py','glances_fs.py','glances_gpu.py','glances_help.py','glances_ip.py','glances_irq.py','glances_load.py','glances_mem.py','glances_memswap.py','glances_network.py','glances_now.py','glances_percpu.py','glances_plugin.py','glances_ports.py','glances_processcount.py','glances_processlist.py','glances_psutilversion.py','glances_quicklook.py','glances_raid.py','glances_sensors.py','glances_smart.py','glances_system.py','glances_uptime.py','glances_wifi.py']
             for item in plugins:
-                # Load the plugin
-                start_duration.reset()
-
-                self._load_plugin(os.path.basename(item), args=args, config=self.config,pkg_prefix="plugins.glances_")
-                logger.debug(f"[nuitka]Plugin {item} started in {start_duration.get()} seconds")
+                if item.startswith(self.header) and item.endswith(".py") and item != (self.header + "plugin.py"):
+                    # Load the plugin
+                    start_duration.reset()
+                    name =  "plugins." + os.path.basename(item)[:-3];
+                    self._load_plugin(os.path.basename(item), args=args, config=self.config,pkg_name=name)
+                    logger.debug(f"[nuitka]Plugin {item} started in {start_duration.get()} seconds")
 
         # Log plugins list
         logger.debug("Active plugins list: {}".format(self.getPluginsList()))
