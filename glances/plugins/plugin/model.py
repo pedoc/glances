@@ -71,8 +71,11 @@ class GlancesPluginModel:
         """
         # Build the plugin name
         # Internal or external module (former prefixed by 'glances.plugins')
-        _mod = self.__class__.__module__.replace('glances.plugins.', '')
-        self.plugin_name = _mod.split('.')[0]
+        if args is not None and getattr(args, 'plugin_name', ''):
+            self.plugin_name = getattr(args, 'plugin_name', '')
+        else:
+            _mod = self.__class__.__module__.replace('glances.plugins.', '')
+            self.plugin_name = _mod.split('.')[0]
 
         if self.plugin_name.startswith('glances_'):
             self.plugin_name = self.plugin_name.split('glances_')[1]

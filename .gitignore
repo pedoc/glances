@@ -67,3 +67,5 @@ bower_components/
 
 # Test
 .coverage
+/.venv/
+/run.build/

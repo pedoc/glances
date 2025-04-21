@@ -92,12 +92,17 @@ class GlancesStats:
         # Restoring system path
         sys.path = sys_path
 
-    def _load_plugin(self, plugin_path, args=None, config=None):
+    def _load_plugin(self, plugin_path, args=None, config=None, pkg_prefix=''):
         """Load the plugin, init it and add to the _plugin dict."""
         # Load the plugin class
+        pkg_name = pkg_prefix + plugin_path
         try:
             # Import the plugin
-            plugin = import_module('glances.plugins.' + plugin_path)
+            # logger.debug(f"Plugin {plugin_path} real name: {pkg_name} pkg_prefix: {pkg_prefix}")
+            plugin = import_module(pkg_name)
+            
+            # Pass plugin name to args override auto parse
+            setattr(args, 'plugin_name', plugin_path)
             # Init and add the plugin to the dictionary
             self._plugins[plugin_path] = plugin.PluginModel(args=args, config=config)
         except Exception as e:
@@ -113,24 +118,44 @@ class GlancesStats:
             if args is not None:
                 # If the all keys are set in the disable_plugin option then look in the enable_plugin option
                 if getattr(args, 'disable_all', False):
-                    logger.debug('%s => %s', plugin_path, getattr(args, 'enable_' + plugin_path, False))
+                    logger.debug('disable_all=> %s => %s', plugin_path, getattr(args, 'enable_' + plugin_path, False))
                     setattr(args, 'disable_' + plugin_path, not getattr(args, 'enable_' + plugin_path, False))
                 else:
+                    logger.debug('disable_plugin=> %s => %s', plugin_path, getattr(args, 'disable_' + plugin_path, False))
                     setattr(args, 'disable_' + plugin_path, getattr(args, 'disable_' + plugin_path, False))
 
     def load_plugins(self, args=None):
         """Load all plugins in the 'plugins' folder."""
         start_duration = Counter()
 
-        for item in os.listdir(plugins_path):
-            if os.path.isdir(os.path.join(plugins_path, item)) and not item.startswith('__') and item != 'plugin':
+        is_nuitka = "__compiled__" in globals()
+        if not is_nuitka:
+            for item in os.listdir(plugins_path):
+                if os.path.isdir(os.path.join(plugins_path, item)) and not item.startswith('__') and item != 'plugin':
+                    # Load the plugin
+                    start_duration.reset()
+                    self._load_plugin(os.path.basename(item), args=args, config=self.config)
+                    logger.debug(f"Plugin {item} started in {start_duration.get()} seconds")
+        else:
+            # pwsh "['{0}']" -f ((Get-ChildItem -Directory .\glances\plugins\ | Where-Object { $_.Name -notmatch '^_' -and $_.Name -ne 'plugin' } | Select-Object -ExpandProperty Name) -join "','")
+            plugins=['alert','amps','cloud','connections','containers','core',
+                     'cpu','diskio','folders','fs','gpu','help','ip','irq',
+                     'load','mem','memswap','network','now','percpu','ports',
+                     'processcount','processlist','programlist','psutilversion',
+                     'quicklook','raid','sensors','smart','system','uptime',
+                     'version','vms','wifi']
+            for item in plugins:
                 # Load the plugin
                 start_duration.reset()
-                self._load_plugin(os.path.basename(item), args=args, config=self.config)
-                logger.debug(f"Plugin {item} started in {start_duration.get()} seconds")
+                self._load_plugin(os.path.basename(item), args=args, config=self.config,pkg_prefix="plugins.")
+
+                logger.debug(f"[nuitka]Plugin {item} started in {start_duration.get()} seconds")
 
         # Log plugins list
         logger.debug(f"Active plugins list: {self.getPluginsList()}")
+        # logger.debug(f"NonActive plugins list: {self.getPluginsList(enable=False)}")
+        # print(f"Active plugins list: {self.getPluginsList()}")
+        # input('continue -> ')
 
     def load_additional_plugins(self, args=None, config=None):
         """Load additional plugins if defined"""
